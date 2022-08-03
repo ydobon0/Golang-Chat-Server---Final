@@ -1,0 +1,128 @@
+<html>
+<title>Chat Server</title>
+
+<h2>Chat Server</h2>
+<h4><input id="name" type="text" size="10" placeholder="Name" /> &nbsp;&nbsp;&#160;&#160;
+    <input id="input" type="text" size="30" placeholder="Message" /> <button onclick="send()">Send</button>
+</h4>
+<h4>
+    <label for="channel">Channel</label>
+    <select name="channel" id="channel">
+        <option value="0">channel 1</option>
+    </select>
+    <button onclick="newChannel()">Create Channel</button> &nbsp;&nbsp;&#160;&#160;
+    <label for="target">To:</label>
+    <select name="target" id="target">
+        <option value="All">All</option>
+    </select> &nbsp;&nbsp;&#160;&#160;
+    <label id="link"></label>
+</h4>
+
+<pre id="output"></pre>
+
+<script>
+    var input = document.getElementById("input");
+    var output = document.getElementById("output");
+    var Name = document.getElementById("name");
+    var target = document.getElementById("target");
+    var channel = document.getElementById("channel");
+    var link = document.getElementById("link");
+    var help = "<a href='http://" + window.location.host + "/help' target='_blank'>Help</a>";
+
+    var socket = new WebSocket("ws://" + window.location.host + "/echo");
+    var channelCnt = 1;
+    Name.value = prompt("Enter name please", "");
+
+    socket.onopen = function() {
+        link.innerHTML = help;
+        output.innerHTML += "Status: Connected\n";
+        updateList();
+    };
+
+    socket.onmessage = function(e) {
+        const msg = JSON.parse(e.data);
+        if (msg.type == "message") {
+            output.innerHTML += "" + msg.message + "\n";
+        } else if (msg.type == "user") {
+            while (target.hasChildNodes()) { // to clean drop box
+                target.removeChild(target.firstChild);
+            }
+            var ary = msg.message.split(",")
+            ary.forEach(addUser);
+        } else if (msg.type == "channel") {
+            while (channel.hasChildNodes()) { // to clean drop box
+                channel.removeChild(channel.firstChild);
+            }
+            var ary = msg.channel.split(",")
+            ary.forEach(addChannel);
+        }
+    };
+
+    function send() {
+        const msg = {
+            message: input.value,
+            name: Name.value,
+            target: target.value,
+            type: "message",
+            channel: channel.value
+        }
+        if (Name.value != "" && input.value != "") {
+            socket.send(JSON.stringify(msg));
+
+            input.value = "";
+            Name.setAttribute("readonly", "true");
+        } else {
+            output.innerHTML += "<span style='color: red; font-size:20px'>Name, Message can not be empty</span>" + "\n";
+        }
+    }
+
+    function addUser(text) {
+        //output.innerHTML += text + "\n";
+
+        var option = document.createElement("option");
+        option.value = text;
+        option.text = text;
+        target.appendChild(option);
+    }
+
+    function newChannel() {
+        channelCnt++;
+        const msg = {
+            message: input.value,
+            name: Name.value,
+            target: target.value,
+            type: "channel",
+            channel: channel.value
+        }
+        if (Name.value != "") {
+            socket.send(JSON.stringify(msg));
+        } else {
+            output.innerHTML += "<span style='color: red; font-size:20px'>Name can not be empty</span>" + "\n";
+        }
+    }
+
+    function addChannel(text) {
+        var nn = parseInt(text) + 1;
+        var option = document.createElement("option");
+        option.value = text;
+        option.text = "channel " + nn;
+        channel.appendChild(option);
+
+        //output.innerHTML += nn + "\n";
+    }
+
+    function updateList() {
+        channelCnt++;
+        const msg = {
+            message: "",
+            name: Name.value,
+            target: target.value,
+            type: "update",
+            channel: channel.value
+        }
+
+        socket.send(JSON.stringify(msg));
+    }
+</script>
+
+</html>
