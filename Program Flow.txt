@@ -1,0 +1,15 @@
+Program Structure and Flow
+
+The program has 2 main parts: Client and Server.
+
+	Clients store the client's websocket request and username.
+
+	The server does the heavy lifting of the program. It handles the sending of messages and the broadcasting of messages to their intended recipients.
+
+Program Flow
+
+	A remote client makes a websocket request to the server.
+
+	A client object is created to keep track of the request and is registered in the main chat channel.
+
+	When a message is sent, the server recieves the message, processes it according to the type of message it is and then sends it to the appropriate recipient
